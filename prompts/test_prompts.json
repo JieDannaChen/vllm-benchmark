@@ -1,0 +1,47 @@
+[
+  {
+    "id": "short_qa",
+    "name": "Short Q&A",
+    "category": "latency",
+    "system": "You are a helpful assistant. Answer concisely.",
+    "prompt": "What is the capital of France? Answer in one sentence.",
+    "expected_tokens_min": 10,
+    "expected_tokens_max": 50
+  },
+  {
+    "id": "code_snippet",
+    "name": "Code generation (short)",
+    "category": "latency",
+    "system": "You are a senior software engineer. Write clean Python code.",
+    "prompt": "Write a Python function that reverses a string in place. Include a docstring and a usage example.",
+    "expected_tokens_min": 50,
+    "expected_tokens_max": 200
+  },
+  {
+    "id": "reasoning_math",
+    "name": "Math reasoning",
+    "category": "quality",
+    "system": "Think step by step. Show your work.",
+    "prompt": "A train travels at 60 km/h for the first half of its journey and 40 km/h for the second half. What is its average speed for the entire journey?",
+    "expected_tokens_min": 100,
+    "expected_tokens_max": 400
+  },
+  {
+    "id": "long_output",
+    "name": "Long-form generation",
+    "category": "throughput",
+    "system": "You are a technical writer. Write detailed, well-structured content.",
+    "prompt": "Explain what continuous integration and continuous deployment (CI/CD) are, why they matter, and what key metrics teams should track. Include at least 5 specific metrics with definitions.",
+    "expected_tokens_min": 300,
+    "expected_tokens_max": 800
+  },
+  {
+    "id": "debug_scenario",
+    "name": "Debugging / analysis",
+    "category": "quality",
+    "system": "You are a QA engineer. Be thorough and systematic.",
+    "prompt": "A web API endpoint returns 500 errors only under high concurrency. List the steps you would take to diagnose the root cause, from quickest checks to deep investigation.",
+    "expected_tokens_min": 150,
+    "expected_tokens_max": 500
+  }
+]

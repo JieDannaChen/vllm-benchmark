@@ -1,0 +1,143 @@
+name: Inference Benchmark
+
+on:
+  pull_request:
+    paths:
+      - '**.py'
+      - 'configs/**'
+      - 'prompts/**'
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+    paths:
+      - '**.py'
+      - 'configs/**'
+      - 'prompts/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Benchmark mode'
+        required: false
+        default: 'sequential'
+        type: choice
+        options:
+          - sequential
+          - concurrent
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # Smoke test — runs on ANY standard GitHub runner (no GPU).
+  # Exercises the full flow end-to-end against mock_server.py:
+  #   baseline → benchmark → regression compare → report
+  # This validates the CI integration itself on every change.
+  # ──────────────────────────────────────────────────────────────
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Start mock inference server
+        run: |
+          python mock_server.py --port 8000 --tokens-per-sec 40 --ttft-ms 80 &
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:8000/v1/models > /dev/null 2>&1; then
+              echo "Mock server ready"
+              break
+            fi
+            sleep 1
+          done
+          curl -s http://localhost:8000/v1/models
+
+      - name: Create baseline
+        run: python benchmark.py --config configs/mock.yaml --baseline --output results/baseline_run.json
+
+      - name: Run benchmark (new run)
+        id: bench
+        run: |
+          MODE=${{ github.event.inputs.mode || 'sequential' }}
+          python benchmark.py --config configs/mock.yaml --mode "$MODE" --output results/new_run.json
+
+      - name: Regression check vs baseline
+        id: compare
+        run: python compare.py --baseline baseline.json --new results/new_run.json --fail-on-regression
+        continue-on-error: true
+
+      - name: Generate markdown report
+        if: always()
+        run: python report.py results/new_run.json --format markdown --output results/report.md
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: results/
+
+      - name: Post report as PR comment
+        if: github.event_name == 'pull_request' && always()
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: results/report.md
+          comment_tag: benchmark-report
+
+  # ──────────────────────────────────────────────────────────────
+  # Real vLLM benchmark — requires a self-hosted runner with GPU.
+  # Enable by setting `if: false` → `if: true` (or removing it) and
+  # switching runs-on to your self-hosted label. The repo's committed
+  # baseline.json is used as the regression reference on PRs.
+  # ──────────────────────────────────────────────────────────────
+  gpu-vllm:
+    if: false
+    runs-on: [self-hosted, gpu]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install vllm
+
+      - name: Start vLLM server
+        run: |
+          vllm serve qwen2.5-0.5b-instruct --host 0.0.0.0 --port 8000 &
+          for i in $(seq 1 60); do
+            if curl -s http://localhost:8000/v1/models > /dev/null 2>&1; then
+              echo "vLLM server ready"
+              break
+            fi
+            sleep 2
+          done
+
+      - name: Run benchmark (new run)
+        run: |
+          MODE=${{ github.event.inputs.mode || 'sequential' }}
+          python benchmark.py --config configs/default.yaml --mode "$MODE" --output results/new_run.json
+
+      - name: Regression check vs committed baseline
+        run: |
+          if [ -f baseline.json ]; then
+            python compare.py --baseline baseline.json --new results/new_run.json --fail-on-regression
+          else
+            echo "No baseline.json committed — run once with --baseline and commit it"
+          fi
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpu-benchmark-results
+          path: results/

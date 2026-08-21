@@ -1,0 +1,29 @@
+# Mock backend config — for CI / local testing without GPU.
+# Point this at a running mock_server.py:
+#     python mock_server.py --port 8000
+target:
+  base_url: "http://localhost:8000/v1"
+  api_key: "EMPTY"
+  model: "mock-model"
+
+benchmark:
+  # "sequential" — one request at a time (best for latency metrics)
+  # "concurrent" — N parallel requests (best for throughput)
+  mode: "sequential"
+  concurrent_clients: 8       # used only in "concurrent" mode
+  warmup_requests: 0          # mock is fast, skip warmup in CI
+  repeats_per_prompt: 2       # keep CI runs short
+
+  # Output length controls (passed to the model)
+  max_tokens: 256
+  temperature: 0.0
+
+  # Stream responses (required for accurate TTFT / TPOT)
+  stream: true
+
+prompts_file: "prompts/test_prompts.json"
+
+output:
+  results_dir: "results"
+  baseline_file: "baseline.json"
+  report_format: "markdown"

@@ -1,0 +1,37 @@
+# vLLM Benchmark Configuration
+# ------------------------------------------------------------------
+# This config controls what benchmark runs, how requests are sent,
+# and what metrics are collected. The tool works with any OpenAI-
+# compatible API (vLLM, Ollama, llama-cpp-python, etc.), so you can
+# start with a CPU-only backend and move to vLLM + GPU later.
+
+target:
+  # Base URL of the OpenAI-compatible inference endpoint
+  # vLLM default:     http://localhost:8000/v1
+  # Ollama (openai):  http://localhost:11434/v1
+  base_url: "http://localhost:8000/v1"
+  api_key: "EMPTY"            # vLLM uses "EMPTY" by default
+  model: "qwen2.5-0.5b-instruct"
+
+benchmark:
+  # Concurrency modes:
+  #   "sequential"  — one request at a time (best for latency metrics)
+  #   "concurrent"  — N parallel requests (best for throughput)
+  mode: "sequential"
+  concurrent_clients: 8       # used only in "concurrent" mode
+  warmup_requests: 2          # warm-up requests before measurement
+  repeats_per_prompt: 3       # how many times each prompt is re-run
+
+  # Output length controls (passed to the model)
+  max_tokens: 512
+  temperature: 0.0
+
+  # Stream responses (required for accurate TTFT / TPOT)
+  stream: true
+
+prompts_file: "prompts/test_prompts.json"
+
+output:
+  results_dir: "results"
+  baseline_file: "baseline.json"
+  report_format: "markdown"    # markdown | html

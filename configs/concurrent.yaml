@@ -1,0 +1,30 @@
+# Concurrent throughput config — used as the "config B" in configuration
+# comparisons (same prompts, different serving load).
+# Use with mock_server.py or any OpenAI-compatible backend:
+#     python compare_configs.py --configs configs/default.yaml configs/concurrent.yaml
+target:
+  base_url: "http://localhost:8000/v1"
+  api_key: "EMPTY"
+  model: "qwen2.5-0.5b-instruct"
+
+benchmark:
+  # "sequential" — one request at a time (best for latency metrics)
+  # "concurrent" — N parallel requests (best for throughput)
+  mode: "concurrent"
+  concurrent_clients: 8       # simulates batch size / parallel requests
+  warmup_requests: 2
+  repeats_per_prompt: 3
+
+  # Output length controls (passed to the model)
+  max_tokens: 512
+  temperature: 0.0
+
+  # Stream responses (required for accurate TTFT / TPOT)
+  stream: true
+
+prompts_file: "prompts/test_prompts.json"
+
+output:
+  results_dir: "results"
+  baseline_file: "baseline.json"
+  report_format: "markdown"
