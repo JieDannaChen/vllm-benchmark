@@ -1,0 +1,12 @@
+# Match the baseline settings; only change the model/deployment being compared.
+label: candidate
+target:
+  base_url: http://localhost:8001/v1
+  model: REPLACE_WITH_CANDIDATE_MODEL
+  # api_key_env: RUNNING_EVAL_API_KEY
+scenario_file: scenarios/running_analysis.json
+evaluation:
+  repeats_per_case: 3
+  max_tokens: 1024
+  temperature: 0.0
+  timeout_seconds: 60

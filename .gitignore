@@ -3,3 +3,10 @@ __pycache__/
 results/
 .DS_Store
 .venv/
+
+# Private endpoint credentials and personal experiment overrides
+.env
+.env.*
+!.env.example
+*.local.yaml
+*.local.json

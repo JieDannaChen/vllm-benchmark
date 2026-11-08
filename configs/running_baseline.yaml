@@ -1,0 +1,12 @@
+# Use the endpoint's exact served model name; this placeholder will not run as-is.
+label: baseline
+target:
+  base_url: http://localhost:8000/v1
+  model: REPLACE_WITH_BASELINE_MODEL
+  # api_key_env: RUNNING_EVAL_API_KEY
+scenario_file: scenarios/running_analysis.json
+evaluation:
+  repeats_per_case: 3
+  max_tokens: 1024
+  temperature: 0.0
+  timeout_seconds: 60

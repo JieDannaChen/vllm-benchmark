@@ -5,6 +5,38 @@ LLM inference performance. Built with a quality-engineering mindset:
 reproducible results, automated regression detection, CI integration,
 and clear reports.
 
+## Running-data analysis: a concrete model-upgrade use case
+
+Compare structured analysis quality alongside response latency with 11 synthetic
+wearable/running-data scenarios: arithmetic, missing data, duplicates, conflicting
+sources, date boundaries, goal updates and explicit user instructions. All goals,
+dates and background events are fictional and do not represent personal records.
+
+```bash
+python3 running_eval.py demo --output-dir results/running-demo
+```
+
+This automatically starts a loopback-only fixture server. The deliberately faster
+candidate makes three preset errors, and the comparison blocks it. **No real model
+is called: this tests the evaluation pipeline, not model capability.** Open
+`results/running-demo/comparison.md` for the report; per-trial raw responses,
+expectations and checks are saved as JSON. For real endpoint comparisons, edit
+`configs/running_baseline.yaml` and `configs/running_candidate.yaml` and follow the
+[Chinese walkthrough and interview example](docs/running_analysis_demo.md).
+
+The new runner reports non-streaming end-to-end response latency, not TTFT or GPU
+throughput. Automatic checks only cover the encoded output contract; explanations
+still need human review. These fixtures do not evaluate medical validity or
+long-term training effectiveness.
+
+**Existing performance-metric limitation:** `benchmark.py` counts nonempty SSE
+content chunks as estimated tokens (and characters for non-streaming responses).
+A chunk is not necessarily one token. Its legacy TPOT includes initial latency;
+ITL represents chunk-arrival gaps. Do not use those estimates as exact token
+metrics or compare them across differently chunked services. Use server-reported
+usage/token counts and a defined measurement convention for rigorous performance
+conclusions. The running-data scenario does not rely on these estimates.
+
 > The architecture follows the same patterns used in enterprise
 > performance engineering (baseline management, regression gates, CI
 > integration) and is designed to scale from a local CPU setup to a

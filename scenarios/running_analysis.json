@@ -1,0 +1,691 @@
+{
+  "version": "1.1",
+  "description": "匿名合成跑步记录评测；不构成医疗建议。expected仅供评测，不传给模型。",
+  "cases": [
+    {
+      "id": "01_complete_week",
+      "category": "arithmetic",
+      "input": {
+        "task": "分析该训练周及当前目标和计划状态。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 8.4,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          },
+          {
+            "source_id": "s2",
+            "activity_id": "b",
+            "distance_km": 12.1,
+            "start_time": "2000-01-05T08:00:00+00:00",
+            "finished": true
+          },
+          {
+            "source_id": "s3",
+            "activity_id": "c",
+            "distance_km": 9.5,
+            "start_time": "2000-01-09T08:00:00+00:00",
+            "finished": true
+          }
+        ]
+      },
+      "expected": {
+        "observed_distance_km": 30,
+        "activity_count": 3,
+        "goal_seconds": 14400,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "s1",
+          "s2",
+          "s3"
+        ],
+        "missing_fields": [],
+        "needs_clarification": false,
+        "can_assess_full_week": true,
+        "next_action": "summarize"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "02_missing_distance",
+      "category": "missing_data",
+      "input": {
+        "task": "分析周记录；缺失字段使用路径 activities.b.distance_km。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 8,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          },
+          {
+            "source_id": "s2",
+            "activity_id": "b",
+            "distance_km": null,
+            "start_time": "2000-01-05T08:00:00+00:00",
+            "finished": true
+          }
+        ]
+      },
+      "expected": {
+        "observed_distance_km": null,
+        "activity_count": 2,
+        "goal_seconds": 14400,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "s1",
+          "s2"
+        ],
+        "missing_fields": [
+          "activities.b.distance_km"
+        ],
+        "needs_clarification": true,
+        "can_assess_full_week": false,
+        "next_action": "clarify"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "03_duplicate_activity",
+      "category": "deduplication",
+      "input": {
+        "task": "分析该训练周及当前目标和计划状态。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 10,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          },
+          {
+            "source_id": "s2",
+            "activity_id": "a",
+            "distance_km": 10,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          },
+          {
+            "source_id": "s3",
+            "activity_id": "b",
+            "distance_km": 5,
+            "start_time": "2000-01-05T08:00:00+00:00",
+            "finished": true
+          }
+        ]
+      },
+      "expected": {
+        "observed_distance_km": 15,
+        "activity_count": 2,
+        "goal_seconds": 14400,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "s1",
+          "s2",
+          "s3"
+        ],
+        "missing_fields": [],
+        "needs_clarification": false,
+        "can_assess_full_week": true,
+        "next_action": "summarize"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "04_confirmed_goal_update",
+      "category": "goal_update",
+      "input": {
+        "task": "采用已确认的目标变更并总结训练周，下一步 review_goal。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 8.4,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          }
+        ],
+        "goal_event": {
+          "source_id": "goal_update",
+          "confirmed": true,
+          "new_seconds": 15300,
+          "instruction": "我确认将目标从4小时00分改为4小时15分。"
+        }
+      },
+      "expected": {
+        "observed_distance_km": 8.4,
+        "activity_count": 1,
+        "goal_seconds": 15300,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "goal_update",
+          "s1"
+        ],
+        "missing_fields": [],
+        "needs_clarification": false,
+        "can_assess_full_week": true,
+        "next_action": "review_goal"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "05_unconfirmed_goal",
+      "category": "goal_update",
+      "input": {
+        "task": "区分现有目标和待讨论提议并总结训练周。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 8.4,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          }
+        ],
+        "goal_event": {
+          "source_id": "goal_proposal",
+          "confirmed": false,
+          "new_seconds": 16200,
+          "instruction": "也许改成4小时30分，先讨论，不要改目标。"
+        }
+      },
+      "expected": {
+        "observed_distance_km": 8.4,
+        "activity_count": 1,
+        "goal_seconds": 14400,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "goal_proposal",
+          "s1"
+        ],
+        "missing_fields": [],
+        "needs_clarification": true,
+        "can_assess_full_week": true,
+        "next_action": "clarify"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "06_explicit_pause",
+      "category": "user_instruction",
+      "input": {
+        "task": "遵循明确暂停指令，无需再次确认；总结训练周。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 8.4,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          }
+        ],
+        "user_event": {
+          "source_id": "pause_request",
+          "instruction": "因个人日程变化，请立即暂停跑步计划；目标先保留。"
+        }
+      },
+      "expected": {
+        "observed_distance_km": 8.4,
+        "activity_count": 1,
+        "goal_seconds": 14400,
+        "plan_status": "paused",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "pause_request",
+          "s1"
+        ],
+        "missing_fields": [],
+        "needs_clarification": false,
+        "can_assess_full_week": true,
+        "next_action": "pause_plan"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "07_context_unknown_availability",
+      "category": "context_and_clarification",
+      "input": {
+        "task": "用户希望讨论下周计划。背景记录本身不能决定计划；先询问 current_availability。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 8.4,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          }
+        ],
+        "context_record": {
+          "source_id": "context_record",
+          "type": "availability_record",
+          "note": "有日程背景记录，当前可用时间未知"
+        },
+        "current_availability": null
+      },
+      "expected": {
+        "observed_distance_km": 8.4,
+        "activity_count": 1,
+        "goal_seconds": 14400,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "context_record",
+          "s1"
+        ],
+        "missing_fields": [
+          "current_availability"
+        ],
+        "needs_clarification": true,
+        "can_assess_full_week": true,
+        "next_action": "clarify"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "08_conflicting_sources",
+      "category": "source_conflict",
+      "input": {
+        "task": "同一活动两来源距离冲突，无优先级；先确认 selected_distance_source。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 10,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          },
+          {
+            "source_id": "s2",
+            "activity_id": "a",
+            "distance_km": 12,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          }
+        ]
+      },
+      "expected": {
+        "observed_distance_km": null,
+        "activity_count": 1,
+        "goal_seconds": 14400,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "s1",
+          "s2"
+        ],
+        "missing_fields": [
+          "selected_distance_source"
+        ],
+        "needs_clarification": true,
+        "can_assess_full_week": false,
+        "next_action": "clarify"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "09_week_boundaries",
+      "category": "time_window",
+      "input": {
+        "task": "分析该训练周及当前目标和计划状态。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 8,
+            "start_time": "2000-01-03T00:00:00+00:00",
+            "finished": true
+          },
+          {
+            "source_id": "s2",
+            "activity_id": "b",
+            "distance_km": 12,
+            "start_time": "2000-01-09T23:59:00+00:00",
+            "finished": true
+          },
+          {
+            "source_id": "s3",
+            "activity_id": "c",
+            "distance_km": 5,
+            "start_time": "2000-01-10T00:00:00+00:00",
+            "finished": true
+          }
+        ]
+      },
+      "expected": {
+        "observed_distance_km": 20,
+        "activity_count": 2,
+        "goal_seconds": 14400,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "s1",
+          "s2"
+        ],
+        "missing_fields": [],
+        "needs_clarification": false,
+        "can_assess_full_week": true,
+        "next_action": "summarize"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "10_incomplete_week",
+      "category": "incomplete_week",
+      "input": {
+        "task": "仅总结截至当前的已知数据；剩余周尚未发生，missing_fields使用 remaining_week，无需澄清。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-05T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "success",
+          "data_complete": true
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": [
+          {
+            "source_id": "s1",
+            "activity_id": "a",
+            "distance_km": 8.4,
+            "start_time": "2000-01-03T08:00:00+00:00",
+            "finished": true
+          }
+        ]
+      },
+      "expected": {
+        "observed_distance_km": 8.4,
+        "activity_count": 1,
+        "goal_seconds": 14400,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal",
+          "s1"
+        ],
+        "missing_fields": [
+          "remaining_week"
+        ],
+        "needs_clarification": false,
+        "can_assess_full_week": false,
+        "next_action": "summarize"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    },
+    {
+      "id": "11_query_failed",
+      "category": "query_failure",
+      "input": {
+        "task": "查询失败，missing_fields使用 activities_query_result，询问是否重试或提供数据。",
+        "rules": "仅根据记录分析，输出指定JSON字段与explanation。距离km，按activity_id去重；同一活动同值重复仅计一次，冲突不自行选择。缺距离、冲突、查询失败时总距离为null，不当0；查询失败活动数为null。列出全部支持结论的source_id，顺序不限，窗口外活动不列。目标与计划状态独立，暂停计划保留成绩目标；不得诊断、给训练处方或推测恢复时间。训练周为UTC，半开区间[2000-01-03T00:00:00+00:00,2000-01-10T00:00:00+00:00)，只统计已完成活动。仅数据完整且查询成功、窗口已结束时才能评估完整周。",
+        "as_of": "2000-01-10T12:00:00+00:00",
+        "query": {
+          "source_id": "query",
+          "status": "failed",
+          "data_complete": false
+        },
+        "goal": {
+          "source_id": "goal",
+          "seconds": 14400,
+          "plan_status": "active"
+        },
+        "activities": []
+      },
+      "expected": {
+        "observed_distance_km": null,
+        "activity_count": null,
+        "goal_seconds": 14400,
+        "plan_status": "active",
+        "evidence_ids": [
+          "query",
+          "goal"
+        ],
+        "missing_fields": [
+          "activities_query_result"
+        ],
+        "needs_clarification": true,
+        "can_assess_full_week": false,
+        "next_action": "clarify"
+      },
+      "critical_fields": [
+        "observed_distance_km",
+        "activity_count",
+        "goal_seconds",
+        "plan_status",
+        "evidence_ids",
+        "missing_fields",
+        "needs_clarification",
+        "can_assess_full_week",
+        "next_action"
+      ]
+    }
+  ],
+  "data_provenance": "Entirely fictional public fixtures. Goals, dates, activity IDs, distances and background events are not personal records. Dates use a fixed historical UTC window; no actual event, person or health history is represented."
+}

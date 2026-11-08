@@ -26,6 +26,23 @@ on:
           - concurrent
 
 jobs:
+  running-analysis-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install evaluation dependency
+        run: pip install 'pyyaml>=6.0'
+      - name: Test the evaluator and fixture demonstration
+        run: python -m unittest discover -s tests -v
+      - name: Generate the synthetic regression report
+        run: python running_eval.py demo --output-dir results/running-demo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: running-analysis-demo
+          path: results/running-demo/
   # ──────────────────────────────────────────────────────────────
   # Smoke test — runs on ANY standard GitHub runner (no GPU).
   # Exercises the full flow end-to-end against mock_server.py:
